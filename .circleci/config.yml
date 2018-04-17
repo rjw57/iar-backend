@@ -1,28 +1,57 @@
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 version: 2
 jobs:
-  build:
+#  build_image:
+#    docker:
+#      - image: circleci/python:3.6
+#
+#    working_directory: ~/repo
+#
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - run:
+#          name: Build image
+#          command: |
+#            docker build -t gcr.io/information-asset-register/iar-backend:${CIRCLE_SHA1} .
+
+  test:
     docker:
-      - image: circleci/python:3.6.1
-      - image: circleci/postgres:9.4
+      - image: circleci/python:3.6
+      - image: postgres:9.6
 
     working_directory: ~/repo
+
+    environment:
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_HOST: localhost
+      DJANGO_DB_NAME: db
+      DJANGO_DB_USER: postgres
+      DJANGO_DB_PASSWORD: dbpass
+      POSTGRES_DB: db
+      POSTGRES_PASSWORD: dbpass
 
     steps:
       - checkout
 
       - run:
-          name: install tox
+          name: Install test runner dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install tox
+            python -m virtualenv -p $(which python3) ./venv/
+            source ./venv/bin/activate
+            pip install tox codecov
 
       - run:
-          name: run tests
+          name: Run test suite
           command: |
-            . venv/bin/activate
+            source ./venv/bin/activate
             tox
+
+      - run:
+          name: Submit code-coverage info
+          command: |
+            source ./venv/bin/activate
+            codecov
 
       - store_artifacts:
           path: build/htmlcov
@@ -31,3 +60,9 @@ jobs:
       - store_artifacts:
           path: build/doc
           destination: doc
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test
