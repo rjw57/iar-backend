@@ -1,0 +1,33 @@
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6.1
+      - image: circleci/postgres:9.4
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: install tox
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install tox
+
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            tox
+
+      - store_artifacts:
+          path: build/htmlcov
+          destination: coverage
+
+      - store_artifacts:
+          path: build/doc
+          destination: doc
