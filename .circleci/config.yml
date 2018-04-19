@@ -2,23 +2,42 @@
 version: 2
 
 jobs:
-  # Build and push a Docker image to the gcloud container registry
-  build_image:
+  deploy:
     machine: true
+
+    environment:
+      IAR_BACKEND_REPO: ${CIRCLE_REPOSITORY_URL}
+      IAR_BACKEND_REF: ${CIRCLE_SHA1}
+
     steps:
-      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "86:43:cc:97:28:b9:28:6d:05:ed:a6:b6:24:51:84:2f"
+
+      - run:
+          name: Updating GCloud SDK
+          command: |
+            sudo /opt/google-cloud-sdk/bin/gcloud components update
+            sudo /opt/google-cloud-sdk/bin/gcloud components install beta kubectl
+            # Fix permissions on Google Cloud SDK logs
+            sudo chown -R "${USER}" ~/.config/gcloud/logs
 
       - run:
           name: Authenticate to Google Cloud
           command: |
             echo "$GCLOUD_SERVICE_KEY" > ${HOME}/gcloud-service-key.json
-            sudo /opt/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            sudo /opt/google-cloud-sdk/bin/gcloud config set project $GCLOUD_PROJECT
+            /opt/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            /opt/google-cloud-sdk/bin/gcloud config set project $GCLOUD_PROJECT
 
       - run:
-          name: Build image
+          name: Checkout deployment repository
           command: |
-            docker build -t gcr.io/information-asset-register/iar-backend:${CIRCLE_SHA1} .
+            git clone git@github.com:uisautomation/iar-deploy .
+
+      - run:
+          name: Deploy
+          command: |
+            DRY_RUN=1 ./deploy.sh test
 
   # Run default unittests and submit code coverage information
   test:
@@ -69,5 +88,5 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - test
-      - build_image
+      #      - test
+      - deploy
