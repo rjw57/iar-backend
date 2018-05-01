@@ -24,8 +24,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', include(router.urls)),
-    re_path(r'^(ui|docs)/$', schema_view.with_ui('swagger', cache_timeout=None),
-            name='schema-openapi-ui'),
     re_path(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None),
             name='schema-json'),
 ]

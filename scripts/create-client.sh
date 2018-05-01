@@ -12,7 +12,7 @@ set -xe
 
 # A convenient alias for calling hydra
 function hydra() {
-	docker-compose exec hydra hydra $@
+	docker-compose -f compose/base.yml exec hydra hydra $@
 }
 
 # Delete any existing clients. It is OK for these calls to fail if the
@@ -27,7 +27,7 @@ hydra clients create \
     --id testclient --is-public \
     --grant-types implicit \
     --response-types token,code,refresh_token \
-    --callbacks http://localhost:4445/callback,http://localhost:8000/static/iarbackend/oauth2-redirect.html,http://localhost:8080/static/lookupproxy/oauth2-redirect.html,http://localhost:3000/oauth2-callback \
+    --callbacks http://localhost:4445/callback,http://localhost:8000/oauth2-redirect.html \
     --allowed-scopes lookup:anonymous,assetregister
 
 # Create iarbackend client which can request scopes to access the lookup proxy

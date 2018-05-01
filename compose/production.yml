@@ -1,0 +1,22 @@
+# docker-compose file for local development and testing with container image.
+#
+# Extends compose/base.yml so launch services via:
+#
+#   docker-compose -f compose/base.yml -f compose/production.yml
+version: '3.2'
+services:
+  # Main web application service
+  production_app:
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    expose:
+      - "8080"
+    ports:
+      - "8010:8080"
+    depends_on:
+      - "iar-db"
+      - "hydra"
+      - "lookupproxy"
+    env_file:
+      - base.env

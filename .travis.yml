@@ -10,25 +10,28 @@ language: python
 python:
   - "3.6"
 
-env:
-  global:
-    - DJANGO_DB_ENGINE=django.db.backends.postgresql
-    - DJANGO_DB_NAME=postgres
-    - DJANGO_DB_HOST=localhost
-    - DJANGO_DB_USER=postgres
-    - DJANGO_DB_PASSWORD=mysecret
-
-# Pull and launch the postgres database container.
-before_install:
-  - docker pull postgres:9.6
-  - docker run -d -P -e POSTGRES_PASSWORD=$DJANGO_DB_PASSWORD postgres:9.6
-  - docker ps -a
-
 install:
-  - pip install tox codecov
+  - pip install codecov
 
 script:
-  - tox
+  # Run tox tests
+  - ./compose.sh tox
+      run
+      -v $PWD:/tmp/workspace
+      -e COVERAGE_FILE=/tmp/workspace/.coverage
+      -e TOXINI_ARTEFACT_DIR=/tmp/workspace/build
+      --rm
+      tox
+  - ./compose.sh tox down
+
+  # Check that the production container builds and listens on port 8010
+  - ./compose.sh production up -d
+  - ./compose/wait-for-it.sh localhost:8010 -t 15
+  - ./compose.sh production exec production_app ./manage.py migrate
+
+  # The health-check endpoint should return a non-fail status.
+  - curl --location --output /tmp/status --fail --silent --connect-timeout 2
+      http://localhost:8010/status
 
 after_success:
   - codecov
